@@ -20,6 +20,8 @@ import {
   MessageCircleMore,
 } from 'lucide-react';
 import Loader from '../../assets/loader2';
+import BidPoint from '../../assets/svg/bidPoint.svg';
+import BidCredit from '../../assets/svg/bidCredit.svg';
 import useAuthStore from '../../Store/AuthStore';
 import { ctaContext } from '../../Store/ContextStore';
 import { capitalize, currencyFormat, charLimit, current } from '../../utils';
@@ -29,8 +31,10 @@ import MainModal from '../../Components/modals/MainModal';
 import ReferralView from '../../Components/modals/ReferralView';
 import FundingWallet from '../../Components/modals/FundingWallet';
 import Withdrawal from '../../Components/modals/Withdrawal';
+import FundWithdrawable from '../../Components/modals/FundWithdrawable';
 import Conversations from '../../Components/Chat/Conversations';
 import ChatSection from '../../Components/Chat/ChatSection';
+import RewardToolTip from '../../Components/ToolTips/RewardToolTip';
 
 const Dashboard = () => {
   const [user, setUser] = useState({});
@@ -75,7 +79,7 @@ const Dashboard = () => {
           setTimeout(() => {
             setUser(data);
             setDisplayName(
-              data.username ? `@${capitalize(data.username)}` : data.email,
+              data.username ? `@${capitalize(data.username)}` : data.email
             );
             setAuctions(data.auctions);
             setBids(data.bids);
@@ -101,7 +105,7 @@ const Dashboard = () => {
       const data = JSON.parse(cachedData);
       setUser(data);
       setDisplayName(
-        data.username ? `@${capitalize(data.username)}` : data.email,
+        data.username ? `@${capitalize(data.username)}` : data.email
       );
       setAuctions(data.auctions);
       setBids(data.bids);
@@ -169,8 +173,25 @@ const Dashboard = () => {
     navigate('/dashboard/wallet-history');
   };
 
+  const RewardHistory = () => {
+    navigate('/dashboard/rewards');
+  };
+
   const productDetails = (id) => {
     navigate(`/product-details/${id}`);
+  };
+
+  const currencyFormatIcon = (num) => {
+    const kobo = (num % 1).toFixed(2).substring(2);
+    const naira = Math.floor(num)
+      .toString()
+      .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+    return (
+      <>
+        <img src={BidCredit} alt="BidCredit" className="w-6 h-6 inline mr-3" />
+        {naira}.{kobo}
+      </>
+    );
   };
 
   const StarRating = ({ rating }) => (
@@ -202,6 +223,7 @@ const Dashboard = () => {
     size = 'md',
     className = '',
     disabled = false,
+    image = null,
     ...props
   }) => {
     const baseClasses =
@@ -231,6 +253,7 @@ const Dashboard = () => {
         {...props}
       >
         {Icon && <Icon className="w-4 h-4" />}
+        {image && <img className="w-5 h-5" src={image} />}
         {label}
       </button>
     );
@@ -250,6 +273,7 @@ const Dashboard = () => {
     size: PropTypes.oneOf(['sm', 'md', 'lg']),
     className: PropTypes.string,
     disabled: PropTypes.bool,
+    image: PropTypes.string,
   };
 
   const handleCloseModal = () => {
@@ -279,6 +303,11 @@ const Dashboard = () => {
             <Withdrawal />
           </MainModal>
         )}
+        {modalIsOpen.state && modalIsOpen.type === 'fund_withdrawable' && (
+          <MainModal header="Fund Withdrawable Wallet" close={handleCloseModal}>
+            <FundWithdrawable data={user} />
+          </MainModal>
+        )}
 
         {modalIsOpen.state && modalIsOpen.type === 'convo' && (
           <Conversations setChatId={setChatId} showModal={showModal} />
@@ -303,10 +332,11 @@ const Dashboard = () => {
             {/* User Profile Section */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex flex-col items-center text-center">
-                <div className="relative mb-4">
+                <div className="relative group mb-4">
                   <Avatar
                     imageUrl={user?.image_link ? user?.image_link?.link : null}
                     username={user.username ? user.username : user.email}
+                    otherStyles="group-hover:opacity-40 transition-opacity"
                   />
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
@@ -370,6 +400,14 @@ const Dashboard = () => {
                   label="Wallet History"
                   onClick={() => WalletHistory()}
                   variant="outline"
+                />
+                <CustomButton
+                  icon={''}
+                  image={BidPoint}
+                  className="w-full justify-start"
+                  label="Rewards"
+                  onClick={() => RewardHistory()}
+                  variant="secondary"
                 />
                 <CustomButton
                   icon={MessageCircleMore}
@@ -491,10 +529,16 @@ const Dashboard = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
                         <div>
-                          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                            Wallet Balance
+                          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                            Wallet{' '}
+                            <img
+                              src={BidCredit}
+                              alt="BidCredit"
+                              className="inline w-6 h-6 ml-2"
+                            />
                           </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 lg:mb-0">
+                            {/* Available Bid Credits */}
                             <div className="relative group">
                               <div
                                 className="rounded-lg p-4"
@@ -507,15 +551,15 @@ const Dashboard = () => {
                                   className="text-sm font-medium mb-1"
                                   style={{ color: '#7a2837' }}
                                 >
-                                  Available Balance
+                                  Available Bid Credit
                                 </p>
                                 <p
                                   className="text-2xl font-bold"
                                   style={{ color: '#9f3247' }}
                                 >
                                   {user.wallet
-                                    ? currencyFormat(user.available_balance)
-                                    : currencyFormat('0.00')}
+                                    ? currencyFormatIcon(user.available_balance)
+                                    : currencyFormatIcon('0.00')}
                                 </p>
                               </div>
                               <span className="absolute left-0 bottom-full mb-2 hidden w-max bg-gray-900 text-white text-xs rounded py-2 px-3 group-hover:block z-10">
@@ -523,6 +567,7 @@ const Dashboard = () => {
                                 balance
                               </span>
                             </div>
+                            {/* Total bid Credits */}
                             <div className="relative group">
                               <div
                                 className="rounded-lg p-4"
@@ -535,24 +580,85 @@ const Dashboard = () => {
                                   className="text-sm font-medium mb-1"
                                   style={{ color: '#7a2837' }}
                                 >
-                                  Total Balance
+                                  Total Bid Credit
                                 </p>
                                 <p
                                   className="text-2xl font-bold"
                                   style={{ color: '#9f3247' }}
                                 >
                                   {user.wallet
-                                    ? currencyFormat(user.wallet)
-                                    : currencyFormat('0.00')}
+                                    ? currencyFormatIcon(user.wallet)
+                                    : currencyFormatIcon('0.00')}
                                 </p>
                               </div>
                               <span className="absolute left-0 bottom-full mb-2 hidden w-max bg-gray-900 text-white text-xs rounded py-2 px-3 group-hover:block z-10">
                                 Total amount in your wallet
                               </span>
                             </div>
+                            {/* Bid Points */}
+                            <div
+                              className="relative group cursor-pointer"
+                              onClick={() => navigate('/dashboard/rewards')}
+                            >
+                              <div
+                                className="rounded-lg p-4"
+                                style={{
+                                  backgroundColor: 'rgba(159, 50, 71, 0.05)',
+                                  border: '1px solid rgba(159, 50, 71, 0.2)',
+                                }}
+                              >
+                                <p
+                                  className="text-sm font-medium mb-1"
+                                  style={{ color: '#7a2837' }}
+                                >
+                                  Bid Points
+                                </p>
+                                <p
+                                  className="text-2xl font-bold"
+                                  style={{ color: '#9f3247' }}
+                                >
+                                  {
+                                    <img
+                                      src={BidPoint}
+                                      alt="BidPoint"
+                                      className="w-6 h-6 inline mr-3"
+                                    />
+                                  }
+                                  {user.bid_point ? user.bid_point : 0}
+                                </p>
+                              </div>
+                              <RewardToolTip position={'bottom'} />
+                            </div>
+                            {/* Withdrawable funds */}
+                            <div className="relative group">
+                              <div
+                                className="rounded-lg p-4"
+                                style={{
+                                  backgroundColor: 'rgba(159, 50, 71, 0.05)',
+                                  border: '1px solid rgba(159, 50, 71, 0.2)',
+                                }}
+                              >
+                                <p
+                                  className="text-sm font-medium mb-1"
+                                  style={{ color: '#7a2837' }}
+                                >
+                                  Withdrawable Funds
+                                </p>
+                                <p
+                                  className="text-2xl font-bold"
+                                  style={{ color: '#9f3247' }}
+                                >
+                                  {currencyFormat(user.withdrawable_amount) ||
+                                    '₦0.00'}
+                                </p>
+                              </div>
+                              <span className="absolute left-0 bottom-full mb-2 hidden w-max bg-gray-900 text-white text-xs rounded py-2 px-3 group-hover:block z-10">
+                                Total amount you can withdraw from your wallet.
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex flex-row gap-3">
+                        <div className="flex flex-col gap-3 mt-6">
                           <CustomButton
                             icon={DollarSign}
                             label="Fund Wallet"
@@ -563,6 +669,22 @@ const Dashboard = () => {
                             icon={Download}
                             label="Withdraw"
                             onClick={() => showModal('withdraw')}
+                            variant="primary"
+                            className="bg-[#b83c51] hover:bg-[#9f3247] border-[#b83c51]"
+                          />
+                          <CustomButton
+                            icon={''}
+                            image={BidPoint}
+                            label="Redeem"
+                            onClick={() =>
+                              navigate('/dashboard/rewards#redeem')
+                            }
+                            variant="primary"
+                          />
+                          <CustomButton
+                            icon={Download}
+                            label="Fund Withdrawable"
+                            onClick={() => showModal('fund_withdrawable')}
                             variant="primary"
                             className="bg-[#b83c51] hover:bg-[#9f3247] border-[#b83c51]"
                           />
@@ -628,7 +750,7 @@ const Dashboard = () => {
                                       <span className="text-gray-600">
                                         {charLimit(
                                           obj.item[0]?.description,
-                                          20,
+                                          20
                                         )}
                                       </span>
                                       <span className="absolute left-0 bottom-full mb-2 hidden w-max bg-gray-900 text-white text-xs rounded py-2 px-3 group-hover:block z-10">
