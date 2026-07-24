@@ -24,7 +24,7 @@ import BidPoint from '../../assets/svg/bidPoint.svg';
 import BidCredit from '../../assets/svg/bidCredit.svg';
 import useAuthStore from '../../Store/AuthStore';
 import { ctaContext } from '../../Store/ContextStore';
-import { capitalize, currencyFormat, charLimit, current, Fetch } from '../../utils';
+import { capitalize, currencyFormat, charLimit, current, Fetch, authFetch } from '../../utils';
 import Avatar from './Avatar';
 import PropTypes from 'prop-types';
 import MainModal from '../../Components/modals/MainModal';
@@ -35,6 +35,7 @@ import FundWithdrawable from '../../Components/modals/FundWithdrawable';
 import Conversations from '../../Components/Chat/Conversations';
 import ChatSection from '../../Components/Chat/ChatSection';
 import RewardToolTip from '../../Components/ToolTips/RewardToolTip';
+import { toast } from 'react-toastify';
 
 const Dashboard = () => {
   const [user, setUser] = useState({});
@@ -67,10 +68,7 @@ const Dashboard = () => {
     const getUser = async () => {
       const endpoint = `${current}users/profile`;
       try {
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          credentials: 'include',
-        });
+        const response = await authFetch(endpoint, { method: 'GET' });
 
         if (response.ok) {
           const result = await response.json();
@@ -102,17 +100,70 @@ const Dashboard = () => {
       }
     };
 
+    const getAuctions = async () => {
+      const endpoint = `${current}users/auctions`;
+      try {
+        const response = await Fetch({ url: endpoint, method: 'GET' });
+
+        if (response.success) {
+          setTimeout(() => {
+            setAuctions(response.data.data);
+            setLoading(false);
+            sessionStorage.setItem(
+              '_auctions',
+              JSON.stringify(response.data.data)
+            );
+          }, 1000);
+        } else {
+          const error = response.error;
+          console.error(error);
+          throw new Error(error.message || 'Failed to fetch auctions');
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to fetch auctions. Please try again later.');
+      }
+    };
+
+    const getBids = async () => {
+      const endpoint = `${current}users/bids`;
+      try {
+        const response = await Fetch({ url: endpoint, method: 'GET' });
+
+        if (response.success) {
+          setTimeout(() => {
+            setBids(response.data.data);
+            setLoading(false);
+            sessionStorage.setItem('_bids', JSON.stringify(response.data.data));
+          }, 1000);
+        } else {
+          const error = response.error;
+          console.error(error);
+          throw new Error(error.message || 'Failed to fetch bids');
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to fetch bids. Please try again later.');
+      }
+    };
+
     const cachedData = sessionStorage.getItem('_user');
-    if (!cachedData) {
+    const cachedAuctions = sessionStorage.getItem('_auctions');
+    const cachedBids = sessionStorage.getItem('_bids');
+    if (!cachedData || !cachedAuctions || !cachedBids) {
       getUser();
+      getAuctions();
+      getBids();
     } else {
       const data = JSON.parse(cachedData);
+      const auctionData = JSON.parse(cachedAuctions);
+      const bidData = JSON.parse(cachedBids);
       setUser(data);
       setDisplayName(
         data.username ? `@${capitalize(data.username)}` : data.email
       );
-      setAuctions(data.auctions);
-      setBids(data.bids);
+      setAuctions(auctionData);
+      setBids(bidData);
       setRating(data.rating);
       setLoading(false);
     }
@@ -123,10 +174,7 @@ const Dashboard = () => {
     let endpoint = `${current}users/logout`;
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await authFetch(endpoint, { method: 'POST' });
       if (response.ok) {
         let data = await response.json();
         console.log(data);
