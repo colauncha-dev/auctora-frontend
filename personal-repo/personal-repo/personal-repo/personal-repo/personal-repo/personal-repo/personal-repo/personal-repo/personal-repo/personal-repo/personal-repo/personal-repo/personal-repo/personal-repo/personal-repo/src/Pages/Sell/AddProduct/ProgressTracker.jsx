@@ -24,8 +24,8 @@ const ProgressTracker = () => {
     item: {
       name: '',
       description: '',
-      category_id: '',
-      sub_category_id: '',
+      category_ids: [],
+      sub_category_ids: [],
     },
     product: {
       start_price: 0,
@@ -253,7 +253,7 @@ const ProgressTracker = () => {
               />
             )}
 
-            {/* Navigation Buttons */}
+            {/* Navigation Buttons
             <div className="flex space-x-4">
               <button
                 onClick={() => handleStepChange(activeStep - 1)}
@@ -279,7 +279,7 @@ const ProgressTracker = () => {
               >
                 Next
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
