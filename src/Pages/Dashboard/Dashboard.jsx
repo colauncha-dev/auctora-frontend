@@ -329,7 +329,8 @@ const Dashboard = () => {
       >
         {Icon && <Icon className="w-4 h-4" />}
         {image && <img className="w-5 h-5" src={image} />}
-        {label}
+        {/* {label} */}
+        <span className="flex-1 text-left">{label}</span>
       </button>
     );
   };
@@ -385,7 +386,11 @@ const Dashboard = () => {
         )}
 
         {modalIsOpen.state && modalIsOpen.type === 'convo' && (
-          <Conversations setChatId={setChatId} showModal={showModal} />
+          <Conversations
+            setChatId={setChatId}
+            showModal={showModal}
+            close={handleCloseModal}
+          />
         )}
         {modalIsOpen.state && modalIsOpen.type === 'chat' && (
           <ChatSection
@@ -393,10 +398,11 @@ const Dashboard = () => {
             showState={modalIsOpen.state && modalIsOpen.type === 'chat'}
             showFunc={
               modalIsOpen.state && modalIsOpen.type === 'chat'
-                ? handleCloseModal
+                ? () => showModal('convo')
                 : () => showModal('chat')
             }
             profileImage={user?.image_link ? user.image_link.link : null}
+            source={'dashboard'}
           />
         )}
 
