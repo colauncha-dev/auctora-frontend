@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 .prettierrc
 links.js
+*links*
+src/utils/links.js
